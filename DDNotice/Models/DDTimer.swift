@@ -39,7 +39,7 @@ class DDTimer: NSObject {
         let timer = Timer(timeInterval: 0.2, target: self, selector: #selector(updateTime(timer:)),
                           userInfo: nil, repeats: true)
         timer.tolerance = 0.05
-        // Keep updating while AppKit tracks menus and controls.
+        // 菜单和其他窗口交互期间也继续更新倒计时。
         RunLoop.main.add(timer, forMode: .common)
         sleepTimer = timer
         publishRemainingTime()
@@ -68,11 +68,12 @@ class DDTimer: NSObject {
     private func publishRemainingTime() {
         let remaining = remainingTime
         delegate?.updateRemainingTime(remaining: remaining)
-        NotificationCenter.default.post(name: Notification.Name(NotiTimerUpdate), object: remaining)
+        NotificationCenter.default.post(name: Notification.Name(NotiTimerUpdate), object: self,
+                                        userInfo: ["remaining": remaining])
     }
 
     func showAlert() {
-        NotificationCenter.default.post(name: Notification.Name(NotiTimerEndAction), object: nil)
+        NotificationCenter.default.post(name: Notification.Name(NotiTimerEndAction), object: self)
         delegate?.TimerEndAction()
     }
 

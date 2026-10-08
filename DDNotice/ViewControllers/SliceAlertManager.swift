@@ -8,35 +8,16 @@
 
 import Cocoa
 
+// 将到期提醒附着到对应闹钟，避免阻塞其他闹钟的操作。
 class SliceAlertManager: NSObject {
-
-    
     static let sharedManager = SliceAlertManager()
-    
-    override init() {
-        super.init()
-    }
-    
-    
-    
-    @discardableResult
-    func PopNormalAlertNoticeView() -> NSApplication.ModalResponse{
-        
-        
-        print("Show Alert!")
-        let myPopUp:NSAlert = NSAlert()
 
-        myPopUp.messageText = "计时结束"
-        let showMsg = UserDefaults.standard.string(forKey: UserDefaultMsgShow) ?? ""
-        
-        myPopUp.informativeText = showMsg
-        
-        //
-        myPopUp.alertStyle = NSAlert.Style.critical
-        myPopUp.addButton(withTitle: "OK")
-        
-        let action = myPopUp.runModal()
-        return action
+    func PopNormalAlertNoticeView(message: String, window: NSWindow) {
+        let myPopUp = NSAlert()
+        myPopUp.messageText = message
+        myPopUp.informativeText = "计时结束"
+        myPopUp.alertStyle = .informational
+        myPopUp.addButton(withTitle: "知道了")
+        myPopUp.beginSheetModal(for: window)
     }
-    
 }

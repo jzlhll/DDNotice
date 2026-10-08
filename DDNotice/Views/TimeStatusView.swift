@@ -8,15 +8,14 @@
 
 import Cocoa
 
-// Formats the countdown on the standard status bar button.
+// 在系统菜单栏按钮上显示当前选中闹钟的倒计时。
 final class TimeStatusView: NSObject, TimerDelegate {
     private weak var button: NSStatusBarButton?
 
     init(button: NSStatusBarButton) {
         self.button = button
         super.init()
-        DDTimer.shared.delegate = self
-        updateRemainingTime(remaining: DDTimer.shared.remainingTime)
+        updateRemainingTime(remaining: 0)
     }
 
     func updateRemainingTime(remaining: TimeInterval) {
@@ -25,12 +24,12 @@ final class TimeStatusView: NSObject, TimerDelegate {
                           totalSeconds / 60 % 60, totalSeconds % 60)
         button?.attributedTitle = NSAttributedString(string: text, attributes: [
             .font: NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .regular),
-            .foregroundColor: NSColor.orange
+            .foregroundColor: NSColor.labelColor
         ])
     }
 
     func TimerEndAction() {
-        // The timer window owns the completion alert and sound.
+        // 提醒和声音由各自的闹钟窗口处理。
         updateRemainingTime(remaining: 0)
     }
 }

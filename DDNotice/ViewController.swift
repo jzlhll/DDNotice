@@ -9,7 +9,48 @@
 import Cocoa
 import AVFoundation
 
+// 使用系统外观绘制无边框的计时面板背景。
+final class TimerPanelView: NSView {
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+        NSColor.windowBackgroundColor.setFill()
+        NSBezierPath(rect: bounds).fill()
+    }
+
+    @available(macOS 10.14, *)
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        needsDisplay = true
+    }
+}
+
+// 覆盖系统切换焦点时的默认选中样式，保持数字原色和透明背景。
+final class TimerFieldEditor: NSTextView {
+    override var selectedTextAttributes: [NSAttributedString.Key: Any] {
+        get { [.backgroundColor: NSColor.clear] }
+        set { super.selectedTextAttributes = [.backgroundColor: NSColor.clear] }
+    }
+}
+
 class ViewController: NSViewController, NSTextFieldDelegate {
+    private static let runningTextColor = adaptiveTextColor(
+        light: NSColor(srgbRed: 0.24, green: 0.50, blue: 0.36, alpha: 1),
+        dark: NSColor(srgbRed: 0.48, green: 0.74, blue: 0.59, alpha: 1))
+    private static let pausedTextColor = adaptiveTextColor(
+        light: NSColor(srgbRed: 0.61, green: 0.45, blue: 0.19, alpha: 1),
+        dark: NSColor(srgbRed: 0.82, green: 0.72, blue: 0.46, alpha: 1))
+    private static let finishedTextColor = adaptiveTextColor(
+        light: NSColor(srgbRed: 0.67, green: 0.36, blue: 0.35, alpha: 1),
+        dark: NSColor(srgbRed: 0.84, green: 0.57, blue: 0.56, alpha: 1))
+
+    private static func adaptiveTextColor(light: NSColor, dark: NSColor) -> NSColor {
+        if #available(macOS 10.15, *) {
+            return NSColor(name: nil) { appearance in
+                appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? dark : light
+            }
+        }
+        return light
+    }
 
     @IBOutlet var TimingContainerView: NSView!
     @IBOutlet weak var TimingNSBox: NSBox!
@@ -22,61 +63,146 @@ class ViewController: NSViewController, NSTextFieldDelegate {
     @IBOutlet weak var startBtn: NSButton!
 
     
-//    let timer = DDTimer.shared
+    let timer = DDTimer()
+    // 时间输入使用独立编辑器，选中数字时保持透明背景。
+    let timeFieldEditor: NSTextView = {
+        let editor = TimerFieldEditor()
+        editor.isFieldEditor = true
+        editor.isRichText = false
+        editor.drawsBackground = false
+        editor.insertionPointColor = .labelColor
+        editor.selectedTextAttributes = [.backgroundColor: NSColor.clear]
+        return editor
+    }()
+    private(set) var reminderMessage = "闹钟"
+    private let reminderTitleField = NSTextField(labelWithString: "闹钟")
+    private var titlebarController: NSTitlebarAccessoryViewController?
 
     var soundPlayer : AVAudioPlayer?
 
     var isTimeTick = false
-    var shadow: NSShadow?
     
     deinit {
         NotificationCenter.default.removeObserver(self)
+        timer.abortSleepTimer()
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view.
-        
-        self.view.wantsLayer = true
-        self.view.layer?.backgroundColor = NSColor.black.cgColor
+        TimingNSBox.boxType = .custom
+        TimingNSBox.isTransparent = true
+        TimingNSBox.borderWidth = 0
+        TimingNSBox.fillColor = .clear
+        TimingNSBox.contentViewMargins = .zero
+
+        for field in [hourLabel, minuteLabel, secondsLabel].compactMap({ $0 }) {
+            field.isBordered = false
+            field.isBezeled = false
+            field.drawsBackground = false
+            field.focusRingType = .none
+            field.textColor = .labelColor
+            field.font = .monospacedDigitSystemFont(ofSize: 34, weight: .medium)
+        }
+        for button in [abortBtn, startBtn].compactMap({ $0 }) {
+            button.bezelStyle = .rounded
+            button.isBordered = true
+            button.font = .systemFont(ofSize: 13)
+        }
+        startBtn.keyEquivalent = "\r"
         
         hourLabel.delegate = self
         minuteLabel.delegate = self
         secondsLabel.delegate = self
-        updateTimeFields(remaining: DDTimer.shared.remainingTime)
-        isTimeTick = DDTimer.shared.isMainTimeInEffect && !DDTimer.shared.isPaused
-        setLabelEditable(editable: !DDTimer.shared.isMainTimeInEffect)
-        startBtn.title = DDTimer.shared.isPaused ? "继续" : (isTimeTick ? "暂停" : "开始")
+        updateTimeFields(remaining: timer.remainingTime)
+        isTimeTick = timer.isMainTimeInEffect && !timer.isPaused
+        setLabelEditable(editable: !timer.isMainTimeInEffect)
+        startBtn.title = timer.isPaused ? "继续" : (isTimeTick ? "暂停" : "开始")
         
-        shadow = NSShadow.init()
-        shadow?.shadowColor = NSColor.clear
-        shadow?.shadowBlurRadius = 7
-        
-        hourLabel.wantsLayer = true
-        hourLabel.shadow = shadow
-        minuteLabel.shadow = shadow;
-        minuteLabel.wantsLayer = true
-        secondsLabel.shadow = shadow;
-        secondsLabel.wantsLayer = true
-        self.view.layer?.borderColor = NSColor.red.cgColor
-        self.view.layer?.borderWidth = 0
+        ChangeTextFiledShadowColor(color: timer.isMainTimeInEffect
+                                  ? (isTimeTick ? .systemGreen : .systemYellow) : .labelColor)
         
         
         NotificationCenter.default.addObserver(self, selector: #selector(appBecomeActive), name: NSNotification.Name("AppBecomeActive"), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(appResignActive), name: NSNotification.Name("AppResignActive"), object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(TimerUpdateNoti), name: NSNotification.Name(NotiTimerUpdate), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(TimerUpdateNoti), name: NSNotification.Name(NotiTimerUpdate), object: timer)
         
         
-        NotificationCenter.default.addObserver(self, selector: #selector(TimerEndAndNoti), name: NSNotification.Name(NotiTimerEndAction), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(TimerEndAndNoti), name: NSNotification.Name(NotiTimerEndAction), object: timer)
         
         
-//        DDTimer.shared.delegate = self
         
         
     }
     
 
     
+
+    override func viewDidAppear() {
+        super.viewDidAppear()
+        guard let window = view.window, titlebarController == nil else { return }
+        let accessory = NSTitlebarAccessoryViewController()
+        accessory.layoutAttribute = .right
+        accessory.view = NSView(frame: NSRect(x: 0, y: 0, width: 146, height: 22))
+
+        reminderTitleField.frame = NSRect(x: 4, y: 2, width: 106, height: 18)
+        reminderTitleField.font = .systemFont(ofSize: 11, weight: .medium)
+        reminderTitleField.textColor = .labelColor
+        reminderTitleField.alignment = .center
+        reminderTitleField.lineBreakMode = .byTruncatingTail
+        reminderTitleField.setAccessibilityLabel("提醒文案，双击编辑")
+        let doubleClick = NSClickGestureRecognizer(target: self, action: #selector(editReminderTitle(_:)))
+        doubleClick.numberOfClicksRequired = 2
+        reminderTitleField.addGestureRecognizer(doubleClick)
+        accessory.view.addSubview(reminderTitleField)
+
+        let addButton = NSButton(title: "+", target: self, action: #selector(addAlarm(_:)))
+        addButton.frame = NSRect(x: 116, y: 0, width: 26, height: 22)
+        addButton.font = .systemFont(ofSize: 18, weight: .regular)
+        addButton.isBordered = false
+        addButton.toolTip = "新建闹钟"
+        addButton.setAccessibilityLabel("新建闹钟")
+        accessory.view.addSubview(addButton)
+
+        window.titleVisibility = .hidden
+        window.tabbingMode = .disallowed
+        window.addTitlebarAccessoryViewController(accessory)
+        titlebarController = accessory
+        updateReminderTitle()
+    }
+
+    @objc private func addAlarm(_ sender: Any?) {
+        (NSApplication.shared.delegate as? AppDelegate)?.createTimerWindow(sender: sender)
+    }
+
+    @objc private func editReminderTitle(_ sender: Any?) {
+        guard let window = view.window, window.attachedSheet == nil else { return }
+        let alert = NSAlert()
+        alert.messageText = "编辑提醒文案"
+        alert.informativeText = "标题也会用作计时结束时的提醒。"
+        alert.addButton(withTitle: "保存")
+        alert.addButton(withTitle: "取消")
+        let input = NSTextField(frame: NSRect(x: 0, y: 0, width: 260, height: 26))
+        input.stringValue = reminderMessage
+        input.placeholderString = "输入提醒文案"
+        alert.accessoryView = input
+        alert.window.initialFirstResponder = input
+        alert.beginSheetModal(for: window) { [weak self] response in
+            guard response == .alertFirstButtonReturn else { return }
+            let message = input.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            self?.reminderMessage = message.isEmpty ? "闹钟" : message
+            self?.updateReminderTitle()
+        }
+        alert.window.makeFirstResponder(input)
+        input.selectText(nil)
+    }
+
+    private func updateReminderTitle() {
+        reminderTitleField.stringValue = reminderMessage
+        reminderTitleField.toolTip = reminderMessage + "\n双击修改提醒文案"
+        view.window?.title = reminderMessage
+        NotificationCenter.default.post(name: Notification.Name(NotiTimerUpdate), object: timer,
+                                        userInfo: ["remaining": timer.remainingTime])
+    }
 
     override var representedObject: Any? {
         didSet {
@@ -87,23 +213,21 @@ class ViewController: NSViewController, NSTextFieldDelegate {
     // MARK: Main
 
     @IBAction func abortBtnClick(_ sender: Any) {
-        DDTimer.shared.abortSleepTimer()
+        timer.abortSleepTimer()
         // update Label str.
         self.setLabelEditable(editable: true)
         startBtn.title = "开始"
         isTimeTick = false
         
-        self.view.layer?.borderWidth = 0
+        ChangeTextFiledShadowColor(color: .labelColor)
     }
 
     @IBAction func startBtnClick(_ sender: Any) {
-        let timer = DDTimer.shared
         if timer.isMainTimeInEffect && !timer.isPaused {
             timer.PauseTimer()
             startBtn.title = "继续"
             isTimeTick = false
-            ChangeTextFiledShadowColor(color: .yellow)
-            view.layer?.borderWidth = 2
+            ChangeTextFiledShadowColor(color: .systemYellow)
             return
         }
 
@@ -120,19 +244,15 @@ class ViewController: NSViewController, NSTextFieldDelegate {
         setLabelEditable(editable: false)
         startBtn.title = "暂停"
         isTimeTick = true
-        ChangeTextFiledShadowColor(color: .green)
-        view.layer?.borderWidth = 0
+        ChangeTextFiledShadowColor(color: .systemGreen)
         if UserDefaults.standard.bool(forKey: UserDefaultSwitchShowStatusTimeView) {
-            view.window?.close()
+            view.window?.orderOut(nil)
         }
     }
 
 }
 
 extension ViewController{
-//    override func controlTextDidBeginEditing(_ obj: Notification) {
-//        TimingFieldBoxContainerView.layer?.backgroundColor = NSColor.clear.cgColor
-//    }
     // MARK: Private
     func controlTextDidChange(_ notification: Notification) {
         guard let field = notification.object as? NSTextField,
@@ -160,35 +280,34 @@ extension ViewController{
     }
     
     func ChangeTextFiledShadowColor(color:NSColor){
-        self.shadow?.shadowColor = color
-        self.hourLabel.shadow = self.shadow
-        self.minuteLabel.shadow = self.shadow
-        self.secondsLabel.shadow = self.shadow
+        let textColor: NSColor
+        if color == .systemGreen {
+            textColor = Self.runningTextColor
+        } else if color == .systemYellow {
+            textColor = Self.pausedTextColor
+        } else if color == .systemRed {
+            textColor = Self.finishedTextColor
+        } else {
+            textColor = color
+        }
+        hourLabel.textColor = textColor
+        minuteLabel.textColor = textColor
+        secondsLabel.textColor = textColor
     }
     
     // MARK: - ---Noti
     
     @objc func appBecomeActive(){
-        self.TimingFieldBoxContainerView.layer?.backgroundColor = NSColor.black.cgColor
-        
-        if isTimeTick{
-            
-        }else{
-            self.ChangeTextFiledShadowColor(color: NSColor.yellow)
-        }
+        view.needsDisplay = true
     }
     
     @objc func appResignActive(){
-        
-        if !isTimeTick {
-            self.ChangeTextFiledShadowColor(color: NSColor.yellow)
-        }
-        
+        view.needsDisplay = true
     }
     
     
     @objc func TimerUpdateNoti(objc: Notification) {
-        guard let remaining = objc.object as? TimeInterval else { return }
+        guard let remaining = objc.userInfo?["remaining"] as? TimeInterval else { return }
         updateTimeFields(remaining: remaining)
     }
 
@@ -202,9 +321,7 @@ extension ViewController{
     @objc func TimerEndAndNoti(){
         
         setLabelEditable(editable: true)
-        self.view.wantsLayer = true
-        
-        self.ChangeTextFiledShadowColor(color: NSColor.red)
+        self.ChangeTextFiledShadowColor(color: .systemRed)
         
         let isPlaySounds = UserDefaults.standard.integer(forKey:UserDefaultIsPlaySounds)
         
@@ -216,11 +333,14 @@ extension ViewController{
         isTimeTick = false
         
         
-        let action = SliceAlertManager.sharedManager.PopNormalAlertNoticeView()
-        
-        if action == NSApplication.ModalResponse.alertFirstButtonReturn {
-            self.ChangeTextFiledShadowColor(color: NSColor.yellow)
+        guard let window = view.window else { return }
+        window.makeKeyAndOrderFront(nil)
+        if #available(macOS 14.0, *) {
+            NSApplication.shared.activate()
+        } else {
+            NSApplication.shared.activate(ignoringOtherApps: true)
         }
+        SliceAlertManager.sharedManager.PopNormalAlertNoticeView(message: reminderMessage, window: window)
     }
     
 

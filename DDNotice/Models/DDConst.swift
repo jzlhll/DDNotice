@@ -9,7 +9,6 @@
 import Cocoa
 
 let UserDefaultIsPlaySounds = "IsPlaySounds"
-let UserDefaultMsgShow = "msgShow"
 let UserDefaultSwitchShowStatusTimeView = "showStatusTimeView"
 
 

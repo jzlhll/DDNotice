@@ -56,9 +56,6 @@
 /* Class = "NSMenuItem"; title = "Correct Spelling Automatically"; ObjectID = "78Y-hA-62v"; */
 "78Y-hA-62v.title" = "Correct Spelling Automatically";
 
-/* Class = "NSButtonCell"; title = "应用"; ObjectID = "7U2-ky-IqU"; */
-"7U2-ky-IqU.title" = "应用";
-
 /* Class = "NSMenu"; title = "Writing Direction"; ObjectID = "8mr-sm-Yjd"; */
 "8mr-sm-Yjd.title" = "Writing Direction";
 
@@ -142,9 +139,6 @@
 
 /* Class = "NSMenuItem"; title = "Revert to Saved"; ObjectID = "KaW-ft-85H"; */
 "KaW-ft-85H.title" = "Revert to Saved";
-
-/* Class = "NSTextFieldCell"; title = "请自定义提示文字"; ObjectID = "Kaa-nY-vFa"; */
-"Kaa-nY-vFa.title" = "请自定义提示文字";
 
 /* Class = "NSMenuItem"; title = "Show All"; ObjectID = "Kd2-mp-pUS"; */
 "Kd2-mp-pUS.title" = "Show All";
@@ -313,9 +307,6 @@
 
 /* Class = "NSMenuItem"; title = "Paste"; ObjectID = "gVA-U4-sdL"; */
 "gVA-U4-sdL.title" = "Paste";
-
-/* Class = "NSTextFieldCell"; title = "应用成功"; ObjectID = "gXB-6f-f04"; */
-"gXB-6f-f04.title" = "应用成功";
 
 /* Class = "NSTextFieldCell"; title = ":"; ObjectID = "h0K-zD-PX9"; */
 "h0K-zD-PX9.title" = ":";
