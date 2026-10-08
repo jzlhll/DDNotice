@@ -6,132 +6,103 @@
 //  Copyright © 2017年 donglyu. All rights reserved.
 //
 
-import Cocoa
+import Foundation
 
-protocol TimerDelegate :NSObjectProtocol{ // 不写NSObjectProtocol 暂时不会报错, 但是写属性是无法写weak
-
-    /// Timer update 回调方法
-    ///
-    /// - Parameter remaining: 剩余秒速
-    func updateRemainingTime(remaining:CFAbsoluteTime)
-    
-    /// Timer结束方法
+protocol TimerDelegate: AnyObject {
+    func updateRemainingTime(remaining: TimeInterval)
     func TimerEndAction()
 }
 
-
 class DDTimer: NSObject {
-
     static let shared = DDTimer()
-    
-    
-    var activityTimer:Timer?
-    var sleepTimer:Timer?
-    
-    var endTime:CFAbsoluteTime = 0.0
-    
-    // 当前timer是否处于生效中。
-    public var isMainTimeInEffect = false
-    
-    weak var delegate:TimerDelegate?
-    
-    
-    override init() {
-        super.init()
+
+    private(set) var activityTimer: Timer?
+    private(set) var sleepTimer: Timer?
+    private(set) var endTime: TimeInterval = 0
+    private(set) var isMainTimeInEffect = false
+    private(set) var isPaused = false
+    private var pausedRemainingTime: TimeInterval = 0
+    weak var delegate: TimerDelegate?
+
+    var remainingTime: TimeInterval {
+        guard isMainTimeInEffect else { return 0 }
+        return isPaused ? pausedRemainingTime : max(0, endTime - Date.timeIntervalSinceReferenceDate)
     }
-    
-    
-    func runSleepTimer(seconds:NSNumber) {
-        
-        endTime = CFAbsoluteTimeGetCurrent() + seconds.doubleValue;
-        
-        if (sleepTimer?.isValid) != nil {
-            sleepTimer?.invalidate()
-        }
-    
-        
-        // schedule timer
-        
-        sleepTimer = Timer.scheduledTimer(timeInterval: 0.2, target: self, selector: #selector(updateTime), userInfo: nil, repeats: true)
-        
-        // save some power
-        sleepTimer?.tolerance = 0.05
-        
+
+    func runSleepTimer(seconds: NSNumber) {
+        guard seconds.doubleValue.isFinite, seconds.doubleValue > 0 else { return }
+        sleepTimer?.invalidate()
+        endTime = Date.timeIntervalSinceReferenceDate + seconds.doubleValue
+        isMainTimeInEffect = true
+        isPaused = false
+        pausedRemainingTime = 0
+        let timer = Timer(timeInterval: 0.2, target: self, selector: #selector(updateTime(timer:)),
+                          userInfo: nil, repeats: true)
+        timer.tolerance = 0.05
+        // Keep updating while AppKit tracks menus and controls.
+        RunLoop.main.add(timer, forMode: .common)
+        sleepTimer = timer
+        publishRemainingTime()
     }
-    
-    
+
     func abortSleepTimer() {
-        if (sleepTimer?.isValid) != nil {
-            sleepTimer?.invalidate()
-        }
-        
-//        let appDel = (NSApplication.shared().delegate) as! AppDelegate
-        
-        delegate?.updateRemainingTime(remaining: 0.0)
-        
+        sleepTimer?.invalidate()
+        sleepTimer = nil
+        endTime = 0
         isMainTimeInEffect = false
+        isPaused = false
+        pausedRemainingTime = 0
+        publishRemainingTime()
     }
-    
+
     @objc func updateTime(timer: Timer) {
-        let remainingTime:CFAbsoluteTime = endTime - CFAbsoluteTimeGetCurrent()
-        
-        // TODO:通知
-        delegate?.updateRemainingTime(remaining: remainingTime)
-        
-//        print("DDTimer's updateTime \(remainingTime)")
-        NotificationCenter.default.post(name: NSNotification.Name(NotiTimerUpdate), object: remainingTime)
-        
-
-        if remainingTime < 0{
-            self.abortSleepTimer()
-            // 执行要做的操作. ShowAlert
-            self.showAlert()
+        guard isMainTimeInEffect, !isPaused, timer === sleepTimer else { return }
+        if remainingTime <= 0 {
+            abortSleepTimer()
+            showAlert()
+        } else {
+            publishRemainingTime()
         }
-        
     }
-    
-    func showAlert()  {
 
-        NotificationCenter.default.post(name: NSNotification.Name(NotiTimerEndAction), object: nil)
-        // call delegate method!
+    private func publishRemainingTime() {
+        let remaining = remainingTime
+        delegate?.updateRemainingTime(remaining: remaining)
+        NotificationCenter.default.post(name: Notification.Name(NotiTimerUpdate), object: remaining)
+    }
+
+    func showAlert() {
+        NotificationCenter.default.post(name: Notification.Name(NotiTimerEndAction), object: nil)
         delegate?.TimerEndAction()
-        
-    }
-    
-    
-    func runSystemActivityTimer()  {
-        if (activityTimer?.isValid)! {
-            activityTimer?.invalidate()
-        }
-        
-        activityTimer = Timer.scheduledTimer(timeInterval: 30, target: self, selector: #selector(systemActivity), userInfo: nil, repeats: true)
-        activityTimer?.tolerance = 1.0
-        
-    }
-    
-    func PauseTimer(){
-        sleepTimer?.fireDate = NSDate.distantFuture
-    }
-    
-    func ContinueTimer(){
-        sleepTimer?.fireDate = NSDate() as Date
-    }
-    
-    
-}
-
-
-// MARK: Private
-extension DDTimer{
-    @objc func systemActivity()  {
-        
-    }
-    
-    func killSynstemActivityTimer()  {
-        if (activityTimer?.isValid)! {
-            activityTimer? .invalidate()
-        }
-        activityTimer = nil;
     }
 
+    func PauseTimer() {
+        guard isMainTimeInEffect, !isPaused else { return }
+        pausedRemainingTime = remainingTime
+        isPaused = true
+        sleepTimer?.fireDate = .distantFuture
+        publishRemainingTime()
+    }
+
+    func ContinueTimer() {
+        guard isMainTimeInEffect, isPaused else { return }
+        endTime = Date.timeIntervalSinceReferenceDate + pausedRemainingTime
+        isPaused = false
+        sleepTimer?.fireDate = Date()
+        publishRemainingTime()
+    }
+
+    func runSystemActivityTimer() {
+        activityTimer?.invalidate()
+        activityTimer = Timer.scheduledTimer(timeInterval: 30, target: self,
+                                             selector: #selector(systemActivity), userInfo: nil, repeats: true)
+        activityTimer?.tolerance = 1
+    }
+
+    @objc func systemActivity() {}
+
+    func killSynstemActivityTimer() {
+        activityTimer?.invalidate()
+        activityTimer = nil
+    }
 }

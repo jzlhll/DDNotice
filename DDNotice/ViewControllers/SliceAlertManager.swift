@@ -19,13 +19,14 @@ class SliceAlertManager: NSObject {
     
     
     
+    @discardableResult
     func PopNormalAlertNoticeView() -> NSApplication.ModalResponse{
         
         
         print("Show Alert!")
         let myPopUp:NSAlert = NSAlert()
 
-        myPopUp.messageText = "计时j结束"
+        myPopUp.messageText = "计时结束"
         let showMsg = UserDefaults.standard.string(forKey: UserDefaultMsgShow) ?? ""
         
         myPopUp.informativeText = showMsg

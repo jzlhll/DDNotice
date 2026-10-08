@@ -8,9 +8,8 @@
 
 import Cocoa
 import AVFoundation
-import NotificationCenter
 
-class ViewController: NSViewController {
+class ViewController: NSViewController, NSTextFieldDelegate {
 
     @IBOutlet var TimingContainerView: NSView!
     @IBOutlet weak var TimingNSBox: NSBox!
@@ -38,11 +37,16 @@ class ViewController: NSViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
         
+        self.view.wantsLayer = true
         self.view.layer?.backgroundColor = NSColor.black.cgColor
         
-        hourLabel.stringValue = "00"
-        minuteLabel.stringValue = "00"
-        secondsLabel.stringValue = "00"
+        hourLabel.delegate = self
+        minuteLabel.delegate = self
+        secondsLabel.delegate = self
+        updateTimeFields(remaining: DDTimer.shared.remainingTime)
+        isTimeTick = DDTimer.shared.isMainTimeInEffect && !DDTimer.shared.isPaused
+        setLabelEditable(editable: !DDTimer.shared.isMainTimeInEffect)
+        startBtn.title = DDTimer.shared.isPaused ? "继续" : (isTimeTick ? "暂停" : "开始")
         
         shadow = NSShadow.init()
         shadow?.shadowColor = NSColor.clear
@@ -58,7 +62,6 @@ class ViewController: NSViewController {
         self.view.layer?.borderWidth = 0
         
         
-        NotificationCenter.default.addObserver(self, selector: #selector(textDidChanged), name: NSText.didChangeNotification , object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(appBecomeActive), name: NSNotification.Name("AppBecomeActive"), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(appResignActive), name: NSNotification.Name("AppResignActive"), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(TimerUpdateNoti), name: NSNotification.Name(NotiTimerUpdate), object: nil)
@@ -88,56 +91,42 @@ class ViewController: NSViewController {
         // update Label str.
         self.setLabelEditable(editable: true)
         startBtn.title = "开始"
+        isTimeTick = false
         
         self.view.layer?.borderWidth = 0
     }
 
     @IBAction func startBtnClick(_ sender: Any) {
-        
-//        self.view.window?.close()
-//        return
-        
-        if isTimeTick { // 点击暂停按钮
+        let timer = DDTimer.shared
+        if timer.isMainTimeInEffect && !timer.isPaused {
+            timer.PauseTimer()
             startBtn.title = "继续"
-            DDTimer.shared.PauseTimer()
             isTimeTick = false
-            self.ChangeTextFiledShadowColor(color: NSColor.yellow)
-            self.view.layer?.borderWidth = 2
-        }else{ // 点击开始
-
-            self.ChangeTextFiledShadowColor(color: NSColor.green)
-            
-            startBtn.title = "暂停"
-            
-            let hour = hourLabel.integerValue
-            let minute = minuteLabel.integerValue
-            let seconds = secondsLabel.integerValue
-            
-            let timeInterval = ((hour*3600)+(minute*60)+seconds)
-            if timeInterval > 0 {
-                self.setLabelEditable(editable: false)
-                DDTimer.shared .runSleepTimer(seconds: NSNumber(value: timeInterval))
-            }
-        
-            isTimeTick = true
-            self.view.layer?.borderWidth = 0
-            
-            
-            let isTimeStatusMode = UserDefaults.standard.bool(forKey: UserDefaultSwitchShowStatusTimeView)
-            if UserDefaults.standard.object(forKey: UserDefaultSwitchShowStatusTimeView) == nil || isTimeStatusMode  {
-                self.view.window?.close()
-            }else{
-                
-            }
-            
-            
+            ChangeTextFiledShadowColor(color: .yellow)
+            view.layer?.borderWidth = 2
+            return
         }
-        
-        
-        
+
+        if timer.isPaused {
+            timer.ContinueTimer()
+        } else {
+            let hour = max(0, min(99, hourLabel.integerValue))
+            let minute = max(0, min(59, minuteLabel.integerValue))
+            let seconds = max(0, min(59, secondsLabel.integerValue))
+            let timeInterval = hour * 3600 + minute * 60 + seconds
+            guard timeInterval > 0 else { return }
+            timer.runSleepTimer(seconds: NSNumber(value: timeInterval))
+        }
+        setLabelEditable(editable: false)
+        startBtn.title = "暂停"
+        isTimeTick = true
+        ChangeTextFiledShadowColor(color: .green)
+        view.layer?.borderWidth = 0
+        if UserDefaults.standard.bool(forKey: UserDefaultSwitchShowStatusTimeView) {
+            view.window?.close()
+        }
     }
 
-    
 }
 
 extension ViewController{
@@ -145,23 +134,13 @@ extension ViewController{
 //        TimingFieldBoxContainerView.layer?.backgroundColor = NSColor.clear.cgColor
 //    }
     // MARK: Private
-    @objc func textDidChanged(textfield:NSTextField)  {
-        if hourLabel.stringValue.count > 2 {
-            let index = hourLabel.stringValue.index(hourLabel.stringValue.startIndex, offsetBy: 2)
-            let value = hourLabel.stringValue.substring(to: index )
-            hourLabel.stringValue = value;
+    func controlTextDidChange(_ notification: Notification) {
+        guard let field = notification.object as? NSTextField,
+              field === hourLabel || field === minuteLabel || field === secondsLabel else { return }
+        field.stringValue = String(field.stringValue.filter { "0123456789".contains($0) }.prefix(2))
+        if field !== hourLabel && field.integerValue > 59 {
+            field.stringValue = "59"
         }
-        if minuteLabel.stringValue.count > 2 {
-            let index = minuteLabel.stringValue.index(minuteLabel.stringValue.startIndex, offsetBy: 2)
-            let value = minuteLabel.stringValue.substring(to: index)
-            minuteLabel.stringValue  = value
-        }
-        if secondsLabel.stringValue.count > 2 {
-            let index = secondsLabel.stringValue.index(secondsLabel.stringValue.startIndex, offsetBy: 2)
-            let value = secondsLabel.stringValue.substring(to: index)
-            secondsLabel.stringValue  = value
-        }
-        
     }
 
     func setLabelEditable(editable:Bool)  {
@@ -208,25 +187,18 @@ extension ViewController{
     }
     
     
-    @objc func TimerUpdateNoti(objc:Notification){
-        
-        let remaining = objc.object as! CFAbsoluteTime
-        
-        let hours = Int.init(remaining/3600)
-        let temp = remaining.truncatingRemainder(dividingBy: 3600)
-        let minutes =  Int.init(temp/60)
-        let seconds = Int.init(remaining.truncatingRemainder(dividingBy: 60)) //%60
-        
-        
-        //        print("hours: \(hours) ,minutes: \(minutes),seconds: \(seconds)")
-        
-        hourLabel.stringValue = String.init(format: "%0.2d", hours)
-        minuteLabel.stringValue = String.init(format: "%0.2d", minutes)
-        secondsLabel.stringValue = String.init(format: "%0.2d", seconds)
-
-        
+    @objc func TimerUpdateNoti(objc: Notification) {
+        guard let remaining = objc.object as? TimeInterval else { return }
+        updateTimeFields(remaining: remaining)
     }
-    
+
+    private func updateTimeFields(remaining: TimeInterval) {
+        let totalSeconds = Int(ceil(max(0, remaining)))
+        hourLabel.stringValue = String(format: "%02d", totalSeconds / 3600)
+        minuteLabel.stringValue = String(format: "%02d", totalSeconds / 60 % 60)
+        secondsLabel.stringValue = String(format: "%02d", totalSeconds % 60)
+    }
+
     @objc func TimerEndAndNoti(){
         
         setLabelEditable(editable: true)
@@ -251,57 +223,6 @@ extension ViewController{
         }
     }
     
-    // MARK: - Timer Delegate
-//    func updateRemainingTime(remaining: CFAbsoluteTime) {
-//        let hours = Int.init(remaining/3600)
-//        let temp = remaining.truncatingRemainder(dividingBy: 3600)
-//        let minutes =  Int.init(temp/60)
-//        let seconds = Int.init(remaining.truncatingRemainder(dividingBy: 60)) //%60
-//
-//
-////        print("hours: \(hours) ,minutes: \(minutes),seconds: \(seconds)")
-//
-//        hourLabel.stringValue = String.init(format: "%0.2d", hours)
-//        minuteLabel.stringValue = String.init(format: "%0.2d", minutes)
-//        secondsLabel.stringValue = String.init(format: "%0.2d", seconds)
-//
-//        // uij
-//    }
-    
-//
-//    func TimerEndAction() {
-//        setLabelEditable(editable: true)
-//        self.view.wantsLayer = true
-//
-//        self.ChangeTextFiledShadowColor(color: NSColor.red)
-//
-//        let isPlaySounds = UserDefaults.standard.integer(forKey:UserDefaultIsPlaySounds)
-//
-//        if isPlaySounds == 1 || UserDefaults.standard.object(forKey: UserDefaultIsPlaySounds) == nil {
-//            self.prepareSound()
-//            self.playSound()
-//        }
-//
-//
-//        // MARK: Notification
-//
-////        let noti = NSNotification.init(name: NSNotification.Name(rawValue: "notiName"), object: nil)
-////        NSNotification.init
-////        // Notification End
-//
-//        startBtn.title = "开始"
-//        isTimeTick = false
-//
-//
-//        let action = SliceAlertManager.sharedManager.PopNormalAlertNoticeView()
-//
-//        if action == NSApplication.ModalResponse.alertFirstButtonReturn {
-//            self.ChangeTextFiledShadowColor(color: NSColor.yellow)
-//        }
-//
-//
-//    }
-
 
 }
 

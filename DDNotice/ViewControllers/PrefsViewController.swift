@@ -28,17 +28,17 @@ class PrefsViewController: NSViewController {
         // Restore UI
         let isPlaySounds = UserDefaults.standard.bool(forKey: UserDefaultIsPlaySounds)
         if UserDefaults.standard.object(forKey: UserDefaultIsPlaySounds) == nil || isPlaySounds  {
-            isPlaySoundsCheckBtn.state = NSControl.StateValue(rawValue: 1)
+            isPlaySoundsCheckBtn.state = .on
         }else{
-            isPlaySoundsCheckBtn.state = NSControl.StateValue(rawValue: 0)
+            isPlaySoundsCheckBtn.state = .off
         }
         
         
         let isShowStaturBarTimeView = UserDefaults.standard.bool(forKey: UserDefaultSwitchShowStatusTimeView)
         if isShowStaturBarTimeView {
-            switchStatusBarTimeBtn.state = NSControl.StateValue(rawValue: 1)
+            switchStatusBarTimeBtn.state = .on
         }else{
-            switchStatusBarTimeBtn.state = NSControl.StateValue(rawValue: 0)
+            switchStatusBarTimeBtn.state = .off
         }
         
         
@@ -68,20 +68,18 @@ class PrefsViewController: NSViewController {
         
         print("check box's state:\(sender.state)")
         
-        UserDefaults.standard.set(sender.state, forKey: UserDefaultIsPlaySounds)
-        UserDefaults.standard.synchronize()
+        UserDefaults.standard.set(sender.state == .on, forKey: UserDefaultIsPlaySounds)
     }
     
     
     @IBAction func switchStatusTimeClick(_ sender: NSButton) {
         
-        UserDefaults.standard.set(sender.state, forKey: UserDefaultSwitchShowStatusTimeView)
-        UserDefaults.standard.synchronize()
+        UserDefaults.standard.set(sender.state == .on, forKey: UserDefaultSwitchShowStatusTimeView)
         
         // Others.
         
         
-        NotificationCenter.default.post(name: NSNotification.Name(NotiOpenPanelTimeViewMode), object: sender.state)
+        NotificationCenter.default.post(name: NSNotification.Name(NotiOpenPanelTimeViewMode), object: sender.state == .on)
         
         
         
@@ -91,7 +89,6 @@ class PrefsViewController: NSViewController {
         
         let customMsg = msgView.string;
         UserDefaults.standard.set(customMsg, forKey: UserDefaultMsgShow)
-        UserDefaults.standard.synchronize()
         
         tipForShowConfirmOK.textColor = NSColor.blue
         let time: TimeInterval  = 1.0

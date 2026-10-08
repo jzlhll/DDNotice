@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		4C84358AC2FD7B575357D7DA /* Pods_Slice.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AD4E54B996B52BF93691787F /* Pods_Slice.framework */; };
 		700935CD1E93CBB8004E3EEA /* PrefsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 700935CC1E93CBB8004E3EEA /* PrefsViewController.swift */; };
 		700935CF1E93D53A004E3EEA /* DDConst.swift in Sources */ = {isa = PBXBuildFile; fileRef = 700935CE1E93D53A004E3EEA /* DDConst.swift */; };
 		702EBD1321778F1C002D0E1C /* 夏日午后的农庄内音效.wav in Resources */ = {isa = PBXBuildFile; fileRef = 702EBD1221778F1C002D0E1C /* 夏日午后的农庄内音效.wav */; };
@@ -25,7 +24,6 @@
 /* Begin PBXFileReference section */
 		0D4DEF611EBC686B009047E8 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Main.strings"; sourceTree = "<group>"; };
 		0DE31DB41E98CC35008665AC /* Relaxing Life.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Relaxing Life.entitlements"; sourceTree = "<group>"; };
-		1C9397C058FABCD508B76286 /* Pods-Slice.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Slice.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Slice/Pods-Slice.debug.xcconfig"; sourceTree = "<group>"; };
 		700935CC1E93CBB8004E3EEA /* PrefsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PrefsViewController.swift; sourceTree = "<group>"; };
 		700935CE1E93D53A004E3EEA /* DDConst.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DDConst.swift; sourceTree = "<group>"; };
 		702EBD1221778F1C002D0E1C /* 夏日午后的农庄内音效.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "夏日午后的农庄内音效.wav"; sourceTree = "<group>"; };
@@ -40,8 +38,6 @@
 		7071C6B91E7CCE83008FF4F8 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		7071C6BB1E7CCE83008FF4F8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		709653561E7EB2250046F735 /* DDTimer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DDTimer.swift; sourceTree = "<group>"; };
-		A2A5A41746BB896185E9F5E7 /* Pods-Slice.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Slice.release.xcconfig"; path = "Pods/Target Support Files/Pods-Slice/Pods-Slice.release.xcconfig"; sourceTree = "<group>"; };
-		AD4E54B996B52BF93691787F /* Pods_Slice.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Slice.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -49,7 +45,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4C84358AC2FD7B575357D7DA /* Pods_Slice.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -70,8 +65,6 @@
 			children = (
 				7071C6B11E7CCE83008FF4F8 /* Slice */,
 				7071C6B01E7CCE83008FF4F8 /* Products */,
-				D21E1CC7F1E8A2F2271A1598 /* Pods */,
-				CD7A171D0E6EAED6384721CB /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -144,23 +137,6 @@
 			path = Views;
 			sourceTree = "<group>";
 		};
-		CD7A171D0E6EAED6384721CB /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				AD4E54B996B52BF93691787F /* Pods_Slice.framework */,
-			);
-			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		D21E1CC7F1E8A2F2271A1598 /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				1C9397C058FABCD508B76286 /* Pods-Slice.debug.xcconfig */,
-				A2A5A41746BB896185E9F5E7 /* Pods-Slice.release.xcconfig */,
-			);
-			name = Pods;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -168,11 +144,9 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 7071C6BE1E7CCE83008FF4F8 /* Build configuration list for PBXNativeTarget "Slice" */;
 			buildPhases = (
-				D7859D29169422B703E7900A /* [CP] Check Pods Manifest.lock */,
 				7071C6AB1E7CCE83008FF4F8 /* Sources */,
 				7071C6AC1E7CCE83008FF4F8 /* Frameworks */,
 				7071C6AD1E7CCE83008FF4F8 /* Resources */,
-				715E491077AF1D9A7C05C84F /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -195,7 +169,6 @@
 				TargetAttributes = {
 					7071C6AE1E7CCE83008FF4F8 = {
 						CreatedOnToolsVersion = 8.2.1;
-						DevelopmentTeam = 3FXLS2N7QR;
 						LastSwiftMigration = 1010;
 						ProvisioningStyle = Automatic;
 						SystemCapabilities = {
@@ -239,42 +212,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		715E491077AF1D9A7C05C84F /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${SRCROOT}/Pods/Target Support Files/Pods-Slice/Pods-Slice-frameworks.sh",
-				"${BUILT_PRODUCTS_DIR}/SnapKit/SnapKit.framework",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SnapKit.framework",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-Slice/Pods-Slice-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		D7859D29169422B703E7900A /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-Slice-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -357,7 +294,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "Relaxing Life";
@@ -410,55 +347,52 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				PRODUCT_NAME = "Relaxing Life";
 				SDKROOT = macosx;
-				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
 			};
 			name = Release;
 		};
 		7071C6BF1E7CCE83008FF4F8 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 1C9397C058FABCD508B76286 /* Pods-Slice.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = "DDNotice/Relaxing Life.entitlements";
-				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = "";
 				INFOPLIST_FILE = DDNotice/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				LINKER_DISPLAYS_MANGLED_NAMES = NO;
-				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				PRODUCT_BUNDLE_IDENTIFIER = com.lyds.DDNotice;
 				PRODUCT_MODULE_NAME = "$(TARGET_NAME)";
 				PRODUCT_NAME = Slice;
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				SWIFT_SWIFT3_OBJC_INFERENCE = On;
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
 		7071C6C01E7CCE83008FF4F8 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = A2A5A41746BB896185E9F5E7 /* Pods-Slice.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = "DDNotice/Relaxing Life.entitlements";
-				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = "";
 				INFOPLIST_FILE = DDNotice/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				LINKER_DISPLAYS_MANGLED_NAMES = NO;
-				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				PRODUCT_BUNDLE_IDENTIFIER = com.lyds.DDNotice;
 				PRODUCT_MODULE_NAME = "$(TARGET_NAME)";
 				PRODUCT_NAME = Slice;
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				SWIFT_SWIFT3_OBJC_INFERENCE = On;
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
